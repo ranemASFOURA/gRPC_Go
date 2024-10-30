@@ -19,16 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdditionService_Add_FullMethodName = "/calculator.AdditionService/Add"
+	AdditionService_Add_FullMethodName        = "/calculator.AdditionService/Add"
+	AdditionService_StreamLogs_FullMethodName = "/calculator.AdditionService/StreamLogs"
 )
 
 // AdditionServiceClient is the client API for AdditionService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// Addition Service
 type AdditionServiceClient interface {
 	Add(ctx context.Context, in *CalculationRequest, opts ...grpc.CallOption) (*CalculationResponse, error)
+	StreamLogs(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogEntry], error)
 }
 
 type additionServiceClient struct {
@@ -49,13 +49,31 @@ func (c *additionServiceClient) Add(ctx context.Context, in *CalculationRequest,
 	return out, nil
 }
 
+func (c *additionServiceClient) StreamLogs(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogEntry], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &AdditionService_ServiceDesc.Streams[0], AdditionService_StreamLogs_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[LogRequest, LogEntry]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AdditionService_StreamLogsClient = grpc.ServerStreamingClient[LogEntry]
+
 // AdditionServiceServer is the server API for AdditionService service.
 // All implementations must embed UnimplementedAdditionServiceServer
 // for forward compatibility.
-//
-// Addition Service
 type AdditionServiceServer interface {
 	Add(context.Context, *CalculationRequest) (*CalculationResponse, error)
+	StreamLogs(*LogRequest, grpc.ServerStreamingServer[LogEntry]) error
 	mustEmbedUnimplementedAdditionServiceServer()
 }
 
@@ -68,6 +86,9 @@ type UnimplementedAdditionServiceServer struct{}
 
 func (UnimplementedAdditionServiceServer) Add(context.Context, *CalculationRequest) (*CalculationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
+}
+func (UnimplementedAdditionServiceServer) StreamLogs(*LogRequest, grpc.ServerStreamingServer[LogEntry]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamLogs not implemented")
 }
 func (UnimplementedAdditionServiceServer) mustEmbedUnimplementedAdditionServiceServer() {}
 func (UnimplementedAdditionServiceServer) testEmbeddedByValue()                         {}
@@ -108,6 +129,17 @@ func _AdditionService_Add_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdditionService_StreamLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LogRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AdditionServiceServer).StreamLogs(m, &grpc.GenericServerStream[LogRequest, LogEntry]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AdditionService_StreamLogsServer = grpc.ServerStreamingServer[LogEntry]
+
 // AdditionService_ServiceDesc is the grpc.ServiceDesc for AdditionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -120,21 +152,27 @@ var AdditionService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AdditionService_Add_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamLogs",
+			Handler:       _AdditionService_StreamLogs_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "proto/calculator.proto",
 }
 
 const (
-	MultiplicationService_Multiply_FullMethodName = "/calculator.MultiplicationService/Multiply"
+	MultiplicationService_Multiply_FullMethodName   = "/calculator.MultiplicationService/Multiply"
+	MultiplicationService_StreamLogs_FullMethodName = "/calculator.MultiplicationService/StreamLogs"
 )
 
 // MultiplicationServiceClient is the client API for MultiplicationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// Multiplication Service
 type MultiplicationServiceClient interface {
 	Multiply(ctx context.Context, in *CalculationRequest, opts ...grpc.CallOption) (*CalculationResponse, error)
+	StreamLogs(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogEntry], error)
 }
 
 type multiplicationServiceClient struct {
@@ -155,13 +193,31 @@ func (c *multiplicationServiceClient) Multiply(ctx context.Context, in *Calculat
 	return out, nil
 }
 
+func (c *multiplicationServiceClient) StreamLogs(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogEntry], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &MultiplicationService_ServiceDesc.Streams[0], MultiplicationService_StreamLogs_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[LogRequest, LogEntry]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type MultiplicationService_StreamLogsClient = grpc.ServerStreamingClient[LogEntry]
+
 // MultiplicationServiceServer is the server API for MultiplicationService service.
 // All implementations must embed UnimplementedMultiplicationServiceServer
 // for forward compatibility.
-//
-// Multiplication Service
 type MultiplicationServiceServer interface {
 	Multiply(context.Context, *CalculationRequest) (*CalculationResponse, error)
+	StreamLogs(*LogRequest, grpc.ServerStreamingServer[LogEntry]) error
 	mustEmbedUnimplementedMultiplicationServiceServer()
 }
 
@@ -174,6 +230,9 @@ type UnimplementedMultiplicationServiceServer struct{}
 
 func (UnimplementedMultiplicationServiceServer) Multiply(context.Context, *CalculationRequest) (*CalculationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Multiply not implemented")
+}
+func (UnimplementedMultiplicationServiceServer) StreamLogs(*LogRequest, grpc.ServerStreamingServer[LogEntry]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamLogs not implemented")
 }
 func (UnimplementedMultiplicationServiceServer) mustEmbedUnimplementedMultiplicationServiceServer() {}
 func (UnimplementedMultiplicationServiceServer) testEmbeddedByValue()                               {}
@@ -214,6 +273,17 @@ func _MultiplicationService_Multiply_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MultiplicationService_StreamLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LogRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(MultiplicationServiceServer).StreamLogs(m, &grpc.GenericServerStream[LogRequest, LogEntry]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type MultiplicationService_StreamLogsServer = grpc.ServerStreamingServer[LogEntry]
+
 // MultiplicationService_ServiceDesc is the grpc.ServiceDesc for MultiplicationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -226,6 +296,12 @@ var MultiplicationService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MultiplicationService_Multiply_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamLogs",
+			Handler:       _MultiplicationService_StreamLogs_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "proto/calculator.proto",
 }
